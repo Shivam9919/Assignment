@@ -5,19 +5,19 @@ import com.example.requested_APIs.Dtos.UpdateTaskDto;
 import com.example.requested_APIs.exception.ResourceNotFoundException;
 import com.example.requested_APIs.exception.UnauthorizedException;
 import com.example.requested_APIs.model.SubTask;
-import com.example.requested_APIs.model.SubTaskStatus;
 import com.example.requested_APIs.model.Task;
-import org.springframework.boot.info.SslInfo.CertificateValidityInfo.Status;
+import com.example.requested_APIs.model.TaskStatus;
 import com.example.requested_APIs.model.User;
 import com.example.requested_APIs.repo.SubTaskRepository;
 import com.example.requested_APIs.repo.TaskRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-
+import jakarta.annotation.Priority;
+import java.time.LocalDate;
 import java.util.List;
-import org.springframework.boot.autoconfigure.data.web.SpringDataWebProperties;
+import java.util.Optional;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.data.web.SpringDataWebProperties.Pageable;
+import org.springframework.data.domain.Page;
+import org.springframework.stereotype.Service;
 
 @Service
 public class TaskService {
@@ -28,36 +28,43 @@ public class TaskService {
     @Autowired
     private SubTaskRepository subTaskRepository;
 
-    public Task createTask(CreateTaskDto createTaskDto, User user) {
-        Task task = new Task();
-        task.setTitle(createTaskDto.getTitle());
-        task.setDescription(createTaskDto.getDescription());
-        task.setDueDate(createTaskDto.getDueDate());
-        task.setPriority(createTaskDto.getPriority());
-        task.setStatus(Status.TODO); // Correct Status usage
-        task.setUser(user);
-        return taskRepository.save(task);
-    }
-
-    public Page<Task> getTasks(User user, Pageable pageable) {
-        return taskRepository.findByUserAndIsDeletedFalse(user, (SpringDataWebProperties.Pageable) pageable);
-    }
-
-    public Task updateTask(Long id, UpdateTaskDto updateTaskDto, User user) {
+    // Helper method to check if the user has access to the task
+    private Task checkUserAuthorization(Long id, User user) {
         Task task = taskRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
 
         if (!task.getUser().equals(user)) {
-            throw new UnauthorizedException("You are not authorized to update this task");
+            throw new UnauthorizedException("You are not authorized to perform this action");
         }
+        return task;
+    }
 
+    public Task createTask(CreateTaskDto createTaskDto, User user) {
+        Task task = new Task();
+        task.setTitle(createTaskDto.getTitle());
+        task.setDescription(createTaskDto.getDescription());
+
+        // Assign the LocalDate directly
+        task.setDueDate(createTaskDto.getDueDate());
+
+        task.setPriority(createTaskDto.getPriority());
+        task.setStatus(TaskStatus.TODO);
+        task.setUser(user);
+        return taskRepository.save(task);
+    }
+
+    public Task updateTask(Long id, UpdateTaskDto updateTaskDto, User user) {
+        Task task = checkUserAuthorization(id, user);
+
+        // Assign the LocalDate directly
         task.setDueDate(updateTaskDto.getDueDate());
+
         task.setStatus(updateTaskDto.getStatus());
 
         // Update all subtasks to DONE if task is marked as DONE
-        if (updateTaskDto.getStatus() == Status.DONE) {
+        if (updateTaskDto.getStatus() == TaskStatus.DONE) {
             List<SubTask> subTasks = subTaskRepository.findByTaskAndIsDeletedFalse(task);
-            subTasks.forEach(subTask -> subTask.setStatus(Status.DONE));
+            subTasks.forEach(subTask -> subTask.setStatus(TaskStatus.DONE));
             subTaskRepository.saveAll(subTasks);
         }
 
@@ -65,12 +72,8 @@ public class TaskService {
     }
 
     public void deleteTask(Long id, User user) {
-        Task task = taskRepository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
-
-        if (!task.getUser().equals(user)) {
-            throw new UnauthorizedException("You are not authorized to delete this task");
-        }
+        // Check user authorization and retrieve the task
+        Task task = checkUserAuthorization(id, user);
 
         // Soft delete task
         task.setIsDeleted(true);
@@ -81,5 +84,18 @@ public class TaskService {
         subTaskRepository.saveAll(subTasks);
 
         taskRepository.save(task);
+    }
+
+    public Page<Task> getTasks(User user, Optional<Priority> priority, Optional<LocalDate> dueDate, Pageable pageable) {
+        // Example query with filtering logic
+        if (priority.isPresent() && dueDate.isPresent()) {
+            return taskRepository.findByUserAndPriorityAndDueDateAndIsDeletedFalse(user, priority.get(), dueDate.get(), pageable);
+        } else if (priority.isPresent()) {
+            return taskRepository.findByUserAndPriorityAndIsDeletedFalse(user, priority.get(), pageable);
+        } else if (dueDate.isPresent()) {
+            return taskRepository.findByUserAndDueDateAndIsDeletedFalse(user, dueDate.get(), pageable);
+        } else {
+            return taskRepository.findByUserAndIsDeletedFalse(user, pageable);
+        }
     }
 }

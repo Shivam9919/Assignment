@@ -1,9 +1,13 @@
 package com.example.requested_APIs.model;
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import java.time.LocalDate;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,26 +23,45 @@ public class SubTask {
 
     private String title;
     private String description;
-
-    // Change this to LocalDate
     private LocalDate dueDate;
 
+    @Enumerated(EnumType.STRING)
     private SubTaskStatus status;
 
-    // Getter and Setter methods
-    public LocalDate getDueDate() {
-        return dueDate;
+    public SubTaskStatus getStatus() {
+        return status;
     }
 
-    public void setDueDate(LocalDate dueDate) {
-        this.dueDate = dueDate;
+    public void setStatus(SubTaskStatus status) {
+        setStatus(status);
     }
 
-    public void setIsDeleted(boolean b) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    public void setStatus(TaskStatus status) {
+        setStatus(status);
     }
 
-    public void setStatus(SubTaskStatus subTaskStatus) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    @ManyToOne
+    @JoinColumn(name = "task_id", nullable = false)
+    private Task task;
+
+    private boolean isDeleted = false;
+
+    // Getters and Setters
+    public boolean getIsDeleted() {
+        return isDeleted;
     }
+
+    public void setIsDeleted(boolean isDeleted) {
+        this.isDeleted = isDeleted;
+    }
+
+    public Task getTask() {
+        return task;
+    }
+
+    public void setTask(Task task) {
+        this.task = task;
+    }
+
+    // Add other getters and setters
 }

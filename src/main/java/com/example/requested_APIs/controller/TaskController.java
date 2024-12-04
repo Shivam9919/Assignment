@@ -3,7 +3,6 @@ package com.example.requested_APIs.controller;
 import com.example.requested_APIs.Dtos.CreateTaskDto;
 import com.example.requested_APIs.Dtos.UpdateTaskDto;
 import com.example.requested_APIs.jwt.JwtUtils;
-import com.example.requested_APIs.model.Task;
 import com.example.requested_APIs.model.User;
 import com.example.requested_APIs.service.TaskService;
 import jakarta.annotation.Priority;
@@ -14,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.redis.stream.Task;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -41,12 +41,12 @@ public class TaskController {
     public ResponseEntity<Task> createTask(@RequestBody @Valid CreateTaskDto createTaskDto, @RequestHeader("Authorization") String token) {
         String username = jwtUtils.extractUsername(token);
         User user = jwtUtils.getUserFromToken(token); // Fetch user details from JWT
-        Task task = taskService.createTask(createTaskDto, user);
+        Task task = (Task) taskService.createTask(createTaskDto, user);
         return ResponseEntity.status(HttpStatus.CREATED).body(task);
     }
 
     @GetMapping
-    public ResponseEntity<Page<Task>> getAllTasks(
+    public ResponseEntity<Page<com.example.requested_APIs.model.Task>> getAllTasks(
             @RequestParam Optional<Priority> priority,
             @RequestParam Optional<LocalDate> dueDate,
             @RequestParam(defaultValue = "0") int page,
@@ -56,7 +56,7 @@ public class TaskController {
         User user = jwtUtils.getUserFromToken(token);
         PageRequest pageable = PageRequest.of(page, size, Sort.by("dueDate").ascending());
 
-        Page<Task> tasks = taskService.getTasks(user, pageable);
+        Page<com.example.requested_APIs.model.Task> tasks = taskService.getTasks(user, priority, dueDate, pageable);
         return ResponseEntity.ok(tasks);
     }
 
@@ -67,7 +67,7 @@ public class TaskController {
             @RequestHeader("Authorization") String token) {
 
         User user = jwtUtils.getUserFromToken(token);
-        Task updatedTask = taskService.updateTask(id, updateTaskDto, user);
+        Task updatedTask = (Task) taskService.updateTask(id, updateTaskDto, user);
         return ResponseEntity.ok(updatedTask);
     }
 

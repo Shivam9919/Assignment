@@ -5,7 +5,6 @@ import com.example.requested_APIs.Dtos.UpdateSubTaskDto;
 import com.example.requested_APIs.exception.ResourceNotFoundException;
 import com.example.requested_APIs.exception.UnauthorizedException;
 import com.example.requested_APIs.model.SubTask;
-import com.example.requested_APIs.model.SubTask.SubTaskStatus;
 import com.example.requested_APIs.model.SubTaskStatus;
 import com.example.requested_APIs.model.Task;
 import com.example.requested_APIs.model.User;
