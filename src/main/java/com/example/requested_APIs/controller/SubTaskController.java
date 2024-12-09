@@ -2,9 +2,9 @@ package com.example.requested_APIs.controller;
 
 import com.example.requested_APIs.Dtos.CreateSubTaskDto;
 import com.example.requested_APIs.Dtos.UpdateSubTaskDto;
+import com.example.requested_APIs.Dtos.UserCreateDto;
 import com.example.requested_APIs.jwt.JwtUtils;
 import com.example.requested_APIs.model.SubTask;
-import com.example.requested_APIs.model.User;
 import com.example.requested_APIs.service.SubTaskService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -34,9 +34,10 @@ public class SubTaskController {
     private JwtUtils jwtUtils;
 
     @PostMapping
-    public ResponseEntity<SubTask> createSubTask(@RequestBody @Valid CreateSubTaskDto createSubTaskDto, @RequestHeader("Authorization") String token) {
-        User user = jwtUtils.getUserFromToken(token);
-        SubTask subTask = subTaskService.createSubTask(createSubTaskDto, user);
+    public ResponseEntity<SubTask> createSubTask(@RequestBody @Valid CreateSubTaskDto createSubTaskDto,
+            @RequestHeader("Authorization") String token) {
+        UserCreateDto userDto = (UserCreateDto) jwtUtils.getUserFromToken(token);  // Use UserDto here
+        SubTask subTask = subTaskService.createSubTask(createSubTaskDto, userDto);  // Pass UserDto to the service
         return ResponseEntity.status(HttpStatus.CREATED).body(subTask);
     }
 
@@ -45,10 +46,10 @@ public class SubTaskController {
             @RequestParam Optional<Long> taskId,
             @RequestHeader("Authorization") String token) {
 
-        User user = jwtUtils.getUserFromToken(token);
+        UserCreateDto userDto = (UserCreateDto) jwtUtils.getUserFromToken(token);  // Use UserDto here
         List<SubTask> subTasks = taskId.isPresent()
-                ? subTaskService.getSubTasksByTask(taskId.get(), user)
-                : subTaskService.getAllSubTasks(user);
+                ? subTaskService.getSubTasksByTask(taskId.get(), userDto) // Pass UserDto to service method
+                : subTaskService.getAllSubTasks(userDto);  // Pass UserDto to service method
 
         return ResponseEntity.ok(subTasks);
     }
@@ -59,15 +60,15 @@ public class SubTaskController {
             @RequestBody @Valid UpdateSubTaskDto updateSubTaskDto,
             @RequestHeader("Authorization") String token) {
 
-        User user = jwtUtils.getUserFromToken(token);
-        SubTask updatedSubTask = subTaskService.updateSubTask(id, updateSubTaskDto, user);
+        UserCreateDto userDto = (UserCreateDto) jwtUtils.getUserFromToken(token);  // Use UserDto here
+        SubTask updatedSubTask = subTaskService.updateSubTask(id, updateSubTaskDto, userDto);  // Pass UserDto
         return ResponseEntity.ok(updatedSubTask);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteSubTask(@PathVariable Long id, @RequestHeader("Authorization") String token) {
-        User user = jwtUtils.getUserFromToken(token);
-        subTaskService.deleteSubTask(id, user);
+        UserCreateDto userDto = (UserCreateDto) jwtUtils.getUserFromToken(token);  // Use UserDto here
+        subTaskService.deleteSubTask(id, userDto);  // Pass UserDto to service method
         return ResponseEntity.noContent().build();
     }
 }

@@ -10,13 +10,13 @@ import com.example.requested_APIs.model.TaskStatus;
 import com.example.requested_APIs.model.User;
 import com.example.requested_APIs.repo.SubTaskRepository;
 import com.example.requested_APIs.repo.TaskRepository;
-import jakarta.annotation.Priority;
+import com.example.requested_APIs.model.Task.Priority; // Correct Priority import
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.data.web.SpringDataWebProperties.Pageable;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -47,7 +47,8 @@ public class TaskService {
         // Assign the LocalDate directly
         task.setDueDate(createTaskDto.getDueDate());
 
-        task.setPriority(createTaskDto.getPriority());
+        // Correctly cast to Task.Priority
+        task.setPriority(Task.Priority.valueOf(createTaskDto.getPriority()));
         task.setStatus(TaskStatus.TODO);
         task.setUser(user);
         return taskRepository.save(task);
@@ -86,8 +87,8 @@ public class TaskService {
         taskRepository.save(task);
     }
 
-    public Page<Task> getTasks(User user, Optional<Priority> priority, Optional<LocalDate> dueDate, Pageable pageable) {
-        // Example query with filtering logic
+    // Corrected method to properly filter tasks based on priority and dueDate
+    public Page<Task> getTasks(User user, Optional<Priority> priority, Optional<LocalDate> dueDate, PageRequest pageable) {
         if (priority.isPresent() && dueDate.isPresent()) {
             return taskRepository.findByUserAndPriorityAndDueDateAndIsDeletedFalse(user, priority.get(), dueDate.get(), pageable);
         } else if (priority.isPresent()) {

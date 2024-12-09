@@ -1,6 +1,5 @@
 package com.example.requested_APIs.Dtos;
 
-import jakarta.annotation.Priority;
 import java.time.LocalDate;
 
 public class CreateTaskDto {
@@ -8,8 +7,9 @@ public class CreateTaskDto {
     private String title;
     private String description;
     private LocalDate dueDate;
-    private Priority priority;
+    private String priority;  // Use String or Task.Priority directly
 
+    // Getters and setters...
     public String getTitle() {
         return title;
     }
@@ -34,11 +34,11 @@ public class CreateTaskDto {
         this.dueDate = dueDate;
     }
 
-    public Priority getPriority() {
+    public String getPriority() {
         return priority;
     }
 
-    public void setPriority(Priority priority) {
+    public void setPriority(String priority) {
         this.priority = priority;
     }
 

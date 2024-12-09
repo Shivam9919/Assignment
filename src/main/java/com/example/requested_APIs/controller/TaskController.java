@@ -3,9 +3,10 @@ package com.example.requested_APIs.controller;
 import com.example.requested_APIs.Dtos.CreateTaskDto;
 import com.example.requested_APIs.Dtos.UpdateTaskDto;
 import com.example.requested_APIs.jwt.JwtUtils;
+import com.example.requested_APIs.model.Task;
+import com.example.requested_APIs.model.Task.Priority;
 import com.example.requested_APIs.model.User;
 import com.example.requested_APIs.service.TaskService;
-import jakarta.annotation.Priority;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.Optional;
@@ -13,7 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.redis.stream.Task;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -35,28 +35,33 @@ public class TaskController {
     private TaskService taskService;
 
     @Autowired
-    private JwtUtils jwtUtils; // Utility class for decoding JWT tokens
+    private JwtUtils jwtUtils;
 
     @PostMapping
-    public ResponseEntity<Task> createTask(@RequestBody @Valid CreateTaskDto createTaskDto, @RequestHeader("Authorization") String token) {
-        String username = jwtUtils.extractUsername(token);
-        User user = jwtUtils.getUserFromToken(token); // Fetch user details from JWT
-        Task task = (Task) taskService.createTask(createTaskDto, user);
+    public ResponseEntity<Task> createTask(@RequestBody @Valid CreateTaskDto createTaskDto,
+            @RequestHeader("Authorization") String token) {
+        String username = jwtUtils.extractUsername(token); // Extract username from token
+        User user = (User) jwtUtils.getUserFromToken(token); // Fetch user details from JWT
+
+        // Log the username (if needed for debugging or monitoring)
+        System.out.println("Task creation request by user: " + username);
+
+        Task task = taskService.createTask(createTaskDto, user); // Assuming createTask() returns Task directly
         return ResponseEntity.status(HttpStatus.CREATED).body(task);
     }
 
     @GetMapping
-    public ResponseEntity<Page<com.example.requested_APIs.model.Task>> getAllTasks(
+    public ResponseEntity<Page<Task>> getAllTasks(
             @RequestParam Optional<Priority> priority,
             @RequestParam Optional<LocalDate> dueDate,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestHeader("Authorization") String token) {
 
-        User user = jwtUtils.getUserFromToken(token);
+        User user = (User) jwtUtils.getUserFromToken(token); // Get user details from JWT
         PageRequest pageable = PageRequest.of(page, size, Sort.by("dueDate").ascending());
 
-        Page<com.example.requested_APIs.model.Task> tasks = taskService.getTasks(user, priority, dueDate, pageable);
+        Page<Task> tasks = taskService.getTasks(user, priority, dueDate, pageable); // Assuming this method returns a Page<Task>
         return ResponseEntity.ok(tasks);
     }
 
@@ -66,15 +71,15 @@ public class TaskController {
             @RequestBody @Valid UpdateTaskDto updateTaskDto,
             @RequestHeader("Authorization") String token) {
 
-        User user = jwtUtils.getUserFromToken(token);
-        Task updatedTask = (Task) taskService.updateTask(id, updateTaskDto, user);
+        User user = (User) jwtUtils.getUserFromToken(token); // Get user details from JWT
+        Task updatedTask = taskService.updateTask(id, updateTaskDto, user); // Assuming this returns Task directly
         return ResponseEntity.ok(updatedTask);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTask(@PathVariable Long id, @RequestHeader("Authorization") String token) {
-        User user = jwtUtils.getUserFromToken(token);
-        taskService.deleteTask(id, user);
+        User user = (User) jwtUtils.getUserFromToken(token); // Get user details from JWT
+        taskService.deleteTask(id, user); // Assuming this method performs the delete and doesn't return anything
         return ResponseEntity.noContent().build();
     }
 }
