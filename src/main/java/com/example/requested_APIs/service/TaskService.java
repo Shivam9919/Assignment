@@ -11,12 +11,14 @@ import com.example.requested_APIs.model.User;
 import com.example.requested_APIs.repo.SubTaskRepository;
 import com.example.requested_APIs.repo.TaskRepository;
 import com.example.requested_APIs.model.Task.Priority; // Correct Priority import
+import jakarta.transaction.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -54,6 +56,7 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
+    @Transactional
     public Task updateTask(Long id, UpdateTaskDto updateTaskDto, User user) {
         Task task = checkUserAuthorization(id, user);
 
@@ -77,7 +80,7 @@ public class TaskService {
         Task task = checkUserAuthorization(id, user);
 
         // Soft delete task
-        task.setIsDeleted(true);
+        task.isDeleted(true);
 
         // Soft delete associated subtasks
         List<SubTask> subTasks = subTaskRepository.findByTaskAndIsDeletedFalse(task);
@@ -88,6 +91,7 @@ public class TaskService {
     }
 
     // Corrected method to properly filter tasks based on priority and dueDate
+    @Transactional
     public Page<Task> getTasks(User user, Optional<Priority> priority, Optional<LocalDate> dueDate, PageRequest pageable) {
         if (priority.isPresent() && dueDate.isPresent()) {
             return taskRepository.findByUserAndPriorityAndDueDateAndIsDeletedFalse(user, priority.get(), dueDate.get(), pageable);

@@ -1,13 +1,9 @@
 package com.example.requested_APIs.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import java.time.LocalDate;
 
 @Entity
-
 public class Task {
 
     public enum Priority {
@@ -15,27 +11,27 @@ public class Task {
         MEDIUM,
         HIGH
     }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String title;
     private String description;
     private LocalDate dueDate;
-    private Priority priority;  // Use Priority enum here
+
+    @Enumerated(EnumType.STRING)
+    private Priority priority;
+
+    @Enumerated(EnumType.STRING)
     private TaskStatus status;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
+
     private boolean isDeleted;
 
-    // Getters and setters for the fields
-    public Priority getPriority() {
-        return priority;
-    }
-
-    public void setPriority(Priority priority) {
-        this.priority = priority;
-    }
-
-    // Other fields and methods...
+    // Getters and Setters
     public Long getId() {
         return id;
     }
@@ -68,6 +64,14 @@ public class Task {
         this.dueDate = dueDate;
     }
 
+    public Priority getPriority() {
+        return priority;
+    }
+
+    public void setPriority(Priority priority) {
+        this.priority = priority;
+    }
+
     public TaskStatus getStatus() {
         return status;
     }
@@ -84,12 +88,15 @@ public class Task {
         this.user = user;
     }
 
-    public boolean isIsDeleted() {
+    public boolean isDeleted() {
+        return isDeleted(true);
+    }
+
+    public boolean isDeleted(boolean par) {
         return isDeleted;
     }
 
-    public void setIsDeleted(boolean isDeleted) {
+    public void setDeleted(boolean isDeleted) {
         this.isDeleted = isDeleted;
     }
-
 }

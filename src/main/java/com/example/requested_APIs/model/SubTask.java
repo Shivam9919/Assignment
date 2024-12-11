@@ -69,5 +69,17 @@ public class SubTask {
         this.task = task;
     }
 
-    // Add other getters and setters
+    public boolean isIsDeleted() {
+        return isDeleted;
+    }
+
+    public SubTask(Long id, String title, String description, LocalDate dueDate, SubTaskStatus status, Task task) {
+        this.id = id;
+        this.title = title;
+        this.description = description;
+        this.dueDate = dueDate;
+        this.status = status;
+        this.task = task;
+    }
+
 }

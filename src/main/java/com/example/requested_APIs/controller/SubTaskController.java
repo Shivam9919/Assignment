@@ -12,16 +12,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/subtasks")
@@ -34,10 +25,19 @@ public class SubTaskController {
     private JwtUtils jwtUtils;
 
     @PostMapping
-    public ResponseEntity<SubTask> createSubTask(@RequestBody @Valid CreateSubTaskDto createSubTaskDto,
+    public ResponseEntity<SubTask> createSubTask(
+            @RequestBody @Valid CreateSubTaskDto createSubTaskDto,
             @RequestHeader("Authorization") String token) {
-        UserCreateDto userDto = (UserCreateDto) jwtUtils.getUserFromToken(token);  // Use UserDto here
-        SubTask subTask = subTaskService.createSubTask(createSubTaskDto, userDto);  // Pass UserDto to the service
+
+        // Extract user info from the token
+        UserCreateDto userDto = (UserCreateDto) jwtUtils.getUserFromToken(token);
+
+        // Check if the title is in uppercase
+        if (!createSubTaskDto.getTitle().equals(createSubTaskDto.getTitle().toUpperCase())) {
+            return ResponseEntity.badRequest().body(null); // Reject if title is not uppercase
+        }
+
+        SubTask subTask = subTaskService.createSubTask(createSubTaskDto, userDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(subTask);
     }
 
@@ -46,10 +46,10 @@ public class SubTaskController {
             @RequestParam Optional<Long> taskId,
             @RequestHeader("Authorization") String token) {
 
-        UserCreateDto userDto = (UserCreateDto) jwtUtils.getUserFromToken(token);  // Use UserDto here
+        UserCreateDto userDto = (UserCreateDto) jwtUtils.getUserFromToken(token);
         List<SubTask> subTasks = taskId.isPresent()
-                ? subTaskService.getSubTasksByTask(taskId.get(), userDto) // Pass UserDto to service method
-                : subTaskService.getAllSubTasks(userDto);  // Pass UserDto to service method
+                ? subTaskService.getSubTasksByTask(taskId.get(), userDto)
+                : subTaskService.getAllSubTasks(userDto);
 
         return ResponseEntity.ok(subTasks);
     }
@@ -60,15 +60,24 @@ public class SubTaskController {
             @RequestBody @Valid UpdateSubTaskDto updateSubTaskDto,
             @RequestHeader("Authorization") String token) {
 
-        UserCreateDto userDto = (UserCreateDto) jwtUtils.getUserFromToken(token);  // Use UserDto here
-        SubTask updatedSubTask = subTaskService.updateSubTask(id, updateSubTaskDto, userDto);  // Pass UserDto
+        UserCreateDto userDto = (UserCreateDto) jwtUtils.getUserFromToken(token);
+
+        // Check if the title is in uppercase
+        if (!updateSubTaskDto.getTitle().equals(updateSubTaskDto.getTitle().toUpperCase())) {
+            return ResponseEntity.badRequest().body(null); // Reject if title is not uppercase
+        }
+
+        SubTask updatedSubTask = subTaskService.updateSubTask(id, updateSubTaskDto, userDto);
         return ResponseEntity.ok(updatedSubTask);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteSubTask(@PathVariable Long id, @RequestHeader("Authorization") String token) {
-        UserCreateDto userDto = (UserCreateDto) jwtUtils.getUserFromToken(token);  // Use UserDto here
-        subTaskService.deleteSubTask(id, userDto);  // Pass UserDto to service method
+    public ResponseEntity<Void> deleteSubTask(
+            @PathVariable Long id,
+            @RequestHeader("Authorization") String token) {
+
+        UserCreateDto userDto = (UserCreateDto) jwtUtils.getUserFromToken(token);
+        subTaskService.deleteSubTask(id, userDto);
         return ResponseEntity.noContent().build();
     }
 }
